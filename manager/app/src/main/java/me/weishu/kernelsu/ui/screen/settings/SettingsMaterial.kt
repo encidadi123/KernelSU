@@ -376,3 +376,101 @@ private fun TopBar(
         scrollBehavior = scrollBehavior
     )
 }
+@Composable
+fun StealthModePreference() {
+    val context = LocalContext.current
+    var enabled by remember { mutableStateOf(StealthPrefs.isEnabled(context)) }
+    var showPinDialog by remember { mutableStateOf(false) }
+    var pendingEnable by remember { mutableStateOf(false) }
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("隐身模式", fontSize = 16.sp)
+                    Text(
+                        "开启后打开应用显示计算器，输入暗号并点击 = 才能进入",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+                Switch(
+                    checked = enabled,
+                    onCheckedChange = { checked ->
+                        if (checked && !StealthPrefs.hasPin(context)) {
+                            pendingEnable = true
+                            showPinDialog = true
+                        } else {
+                            enabled = checked
+                            StealthPrefs.setEnabled(context, checked)
+                        }
+                    }
+                )
+            }
+
+            if (enabled) {
+                TextButton(onClick = { showPinDialog = true }) {
+                    Text("修改暗号")
+                }
+            }
+        }
+    }
+
+    if (showPinDialog) {
+        PinDialog(
+            onDismiss = {
+                showPinDialog = false
+                pendingEnable = false
+            },
+            onConfirm = { pin ->
+                StealthPrefs.setPin(context, pin)
+                if (pendingEnable) {
+                    StealthPrefs.setEnabled(context, true)
+                    enabled = true
+                }
+                pendingEnable = false
+                showPinDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+private fun PinDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var pin by remember { mutableStateOf("") }
+    var confirm by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("设置暗号") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = pin,
+                    onValueChange = { pin = it.filter(Char::isDigit) },
+                    label = { Text("暗号（纯数字，建议 4-8 位）") },
+                    singleLine = true
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = confirm,
+                    onValueChange = { confirm = it.filter(Char::isDigit) },
+                    label = { Text("再次输入") },
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = pin.length >= 4 && pin == confirm,
+                onClick = { onConfirm(pin) }
+            ) { Text("确定") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("取消") }
+        }
+    )
+}
