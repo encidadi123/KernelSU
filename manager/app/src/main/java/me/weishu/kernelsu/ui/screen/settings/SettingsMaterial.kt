@@ -59,7 +59,7 @@ import me.weishu.kernelsu.ui.component.material.SendLogBottomSheet
 import me.weishu.kernelsu.ui.component.material.SnackBarHost
 import me.weishu.kernelsu.ui.component.material.expressiveTopAppBarColors
 import me.weishu.kernelsu.ui.component.uninstalldialog.UninstallDialog
-
+import me.weishu.kernelsu.stealth.StealthPrefs
 /**
  * @author weishu
  * @date 2023/1/1.
